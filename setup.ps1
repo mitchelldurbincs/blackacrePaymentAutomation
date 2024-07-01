@@ -11,11 +11,29 @@ if (-not $gitCommand) {
 	Write-Host "Finished installing Git..."
 }
 
-Write-Host "Installing Python..."
-# Download Python installer
-Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe" -OutFile "python_installer.exe"
-# Install Python (adjust the version number if needed)
-Start-Process -FilePath "python_installer.exe" -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
-# Refresh environment variables
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-Write-Host "Finished installing Python..."
+# Check if Python is installed
+$pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+if (-not $pythonCommand) {
+    Write-Host "Python not found. Installing Python..."
+	# Download Python installer
+	Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe" -OutFile "python_installer.exe"
+	# Install Python (adjust the version number if needed)
+	Start-Process -FilePath "python_installer.exe" -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
+	# Refresh environment variables
+	$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+	Write-Host "Finished installing Python..."
+} else {
+    $pythonVersion = (python --version 2>&1).ToString().Split()[1]
+    Write-Host "Python version $pythonVersion is already installed."
+}
+
+# Clone the repository
+Write-Host "Cloning the repository..."
+git clone https://github.com/mitchelldurbincs/blackacrePaymentAutomation
+Set-Location -Path "blackacrePaymentAutomation"
+
+# Install dependencies
+Write-Host "Installing dependencies..."
+pip install -r requirements.txt
+
+Write-Host "Installation complete! You can now run the program."
