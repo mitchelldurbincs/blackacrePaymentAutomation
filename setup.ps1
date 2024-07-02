@@ -37,3 +37,5 @@ Write-Host "Installing dependencies..."
 pip install -r requirements.txt
 
 Write-Host "Installation complete! You can now run the program."
+Write-Host "To run the program, use the following command:"
+Write-Host "python main.py"
