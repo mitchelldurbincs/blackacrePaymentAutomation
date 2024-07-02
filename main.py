@@ -4,10 +4,17 @@ from tkinter import filedialog, messagebox, ttk
 from tkcalendar import DateEntry
 from datetime import datetime
 
+# Constants
+TITLE = "Data Processing GUI"
+BACKGROUND = "darkblue"
+FOREGROUND = "white"
+CODE_SHEET_NAME = "Category Codes"
+FINAL_REPORT_NAME = "final_report.xlsx"
+
 class DataProcessingGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Data Processing GUI")
+        self.root.title(TITLE)
         self.setup_ui()
 
     def setup_ui(self):
@@ -22,10 +29,10 @@ class DataProcessingGUI:
         style.theme_use('clam')
         date_style = ttk.Style()
         date_style.configure('my.DateEntry', 
-                             fieldbackground='darkblue', 
-                             background='darkblue', 
-                             foreground='white', 
-                             arrowcolor='white')
+                             fieldbackground=BACKGROUND, 
+                             background=BACKGROUND, 
+                             foreground=FOREGROUND, 
+                             arrowcolor=FOREGROUND)
 
     def create_file_inputs(self):
         for row, (label_text, attr_name) in enumerate([
@@ -45,15 +52,15 @@ class DataProcessingGUI:
         ], start=2):
             tk.Label(self.root, text=label_text).grid(row=row, column=0, sticky="e", padx=5, pady=5)
             date_entry = DateEntry(self.root, width=12, style='my.DateEntry', 
-                                   selectbackground='darkblue', 
-                                   selectforeground='white',
-                                   normalbackground='darkblue', 
-                                   normalforeground='white',
-                                   background='darkblue', 
-                                   foreground='white',
-                                   bordercolor='darkblue', 
-                                   headersbackground='darkblue',
-                                   headersforeground='white')
+                                   selectbackground=BACKGROUND, 
+                                   selectforeground=FOREGROUND,
+                                   normalbackground=BACKGROUND, 
+                                   normalforeground=FOREGROUND,
+                                   background=BACKGROUND, 
+                                   foreground=FOREGROUND,
+                                   bordercolor=BACKGROUND, 
+                                   headersbackground=BACKGROUND,
+                                   headersforeground=FOREGROUND)
             date_entry.grid(row=row, column=1, sticky="w", padx=5, pady=5)
             setattr(self, attr_name, date_entry)
 
@@ -72,6 +79,21 @@ class DataProcessingGUI:
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, filename)
 
+    def safe_read_file(self, file_path, file_type, sheet_name=None):
+        try:
+            if file_type == 'csv':
+                return pd.read_csv(file_path)
+            elif file_type == 'excel':
+                return pd.read_excel(file_path, sheet_name=sheet_name)
+        except FileNotFoundError:
+            raise ValueError(f"The file {file_path} was not found. Please check the file path.")
+        except pd.errors.EmptyDataError:
+            raise ValueError(f"The file {file_path} is empty. Please check the file contents.")
+        except pd.errors.ParserError:
+            raise ValueError(f"Unable to parse {file_path}. Please ensure it's a valid {file_type.upper()} file.")
+        except Exception as e:
+            raise ValueError(f"An error occurred while reading {file_path}: {str(e)}")
+
     def process_data(self):
         stripe_file = self.stripe_entry.get()
         other_file = self.other_entry.get()
@@ -84,9 +106,9 @@ class DataProcessingGUI:
 
         try:
             self.update_status("Loading data...")
-            codes_df = pd.read_excel('reportLayoutAndCodes.xlsx', sheet_name='Category Codes')
-            stripe_df = pd.read_csv(stripe_file)
-            other_df = pd.read_csv(other_file)
+            stripe_df = safe_read_file(stripe_file, 'csv')
+            other_df = safe_read_file(other_file, 'csv')
+            codes_df = safe_read_file('reportLayoutAndCodes.xlsx', 'excel', CODE_SHEET_NAME)
 
             self.update_status("Cleaning and processing data...")
             stripe_df_cleaned = self.clean_stripe_data(stripe_df, start_date, end_date)
@@ -102,8 +124,8 @@ class DataProcessingGUI:
             rows = self.process_rows(stripe_df_cleaned, other_df, category_codes, categories)
             
             final_df = pd.DataFrame(rows).sort_values('Session Date')
-            final_df.to_excel("final_report.xlsx", index=False)
-            messagebox.showinfo("Success", "Processing complete. Final report saved as 'final_report.xlsx'")
+            final_df.to_excel(FINAL_REPORT_NAME, index=False)
+            messagebox.showinfo("Success", f"Processing complete. Final report saved as '{FINAL_REPORT_NAME}'")
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
