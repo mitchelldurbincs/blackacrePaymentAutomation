@@ -37,7 +37,8 @@ class DataProcessingGUI:
     def create_file_inputs(self):
         for row, (label_text, attr_name) in enumerate([
             ("Stripe CSV:", "stripe_entry"),
-            ("Other CSV:", "other_entry")
+            ("Other CSV:", "other_entry"),
+            ("Codes XLSX:", "codes_entry")
         ]):
             tk.Label(self.root, text=label_text).grid(row=row, column=0, sticky="e", padx=5, pady=5)
             entry = tk.Entry(self.root, width=50)
@@ -49,7 +50,7 @@ class DataProcessingGUI:
         for row, (label_text, attr_name) in enumerate([
             ("Start Date:", "start_date_entry"),
             ("End Date:", "end_date_entry")
-        ], start=2):
+        ], start=3):  # Changed start from 2 to 3
             tk.Label(self.root, text=label_text).grid(row=row, column=0, sticky="e", padx=5, pady=5)
             date_entry = DateEntry(self.root, width=12, style='my.DateEntry', 
                                    selectbackground=BACKGROUND, 
@@ -66,13 +67,13 @@ class DataProcessingGUI:
 
     def create_status_and_progress(self):
         self.status_label = tk.Label(self.root, text="")
-        self.status_label.grid(row=4, column=1, pady=5)
+        self.status_label.grid(row=5, column=1, pady=5)  # Changed row from 4 to 5
 
         self.progress_bar = ttk.Progressbar(self.root, orient="horizontal", length=300, mode="determinate")
-        self.progress_bar.grid(row=5, column=1, pady=5)
+        self.progress_bar.grid(row=6, column=1, pady=5)  # Changed row from 5 to 6
 
     def create_process_button(self):
-        tk.Button(self.root, text="Process Data", command=self.process_data).grid(row=6, column=1, pady=20)
+        tk.Button(self.root, text="Process Data", command=self.process_data).grid(row=7, column=1, pady=20)  # Changed row from 6 to 7
 
     def browse_file(self, entry_widget):
         filename = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")])
@@ -97,6 +98,7 @@ class DataProcessingGUI:
     def process_data(self):
         stripe_file = self.stripe_entry.get()
         other_file = self.other_entry.get()
+        codes_file = self.codes_entry.get()
         start_date = pd.to_datetime(self.start_date_entry.get_date())
         end_date = pd.to_datetime(self.end_date_entry.get_date())
 
@@ -106,9 +108,9 @@ class DataProcessingGUI:
 
         try:
             self.update_status("Loading data...")
-            stripe_df = safe_read_file(stripe_file, 'csv')
-            other_df = safe_read_file(other_file, 'csv')
-            codes_df = safe_read_file('reportLayoutAndCodes.xlsx', 'excel', CODE_SHEET_NAME)
+            stripe_df = self.safe_read_file(stripe_file, 'csv')
+            other_df = self.safe_read_file(other_file, 'csv')
+            codes_df = self.safe_read_file(codes_file, 'excel', CODE_SHEET_NAME)
 
             self.update_status("Cleaning and processing data...")
             stripe_df_cleaned = self.clean_stripe_data(stripe_df, start_date, end_date)
