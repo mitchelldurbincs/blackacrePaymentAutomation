@@ -36,6 +36,9 @@ Set-Location -Path "blackacrePaymentAutomation"
 Write-Host "Installing dependencies..."
 pip install -r requirements.txt
 
+Write-Host "Attempting to create .exe file..."
+pyinstaller --onefile main.py
+
 Write-Host "Installation complete! You can now run the program."
 Write-Host "To run the program, use the following command:"
 Write-Host "python main.py"
