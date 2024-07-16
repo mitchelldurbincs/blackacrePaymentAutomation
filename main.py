@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkcalendar import DateEntry
 from datetime import datetime
+import os
 
 # Constants
 TITLE = "Data Processing GUI"
@@ -102,8 +103,8 @@ class DataProcessingGUI:
         start_date = pd.to_datetime(self.start_date_entry.get_date())
         end_date = pd.to_datetime(self.end_date_entry.get_date())
 
-        if not stripe_file or not other_file:
-            messagebox.showerror("Error", "Please select both Stripe and Other CSV files.")
+        if not stripe_file or not other_file or not codes_file:
+            messagebox.showerror("Error", "Please select all required files.")
             return
 
         try:
@@ -126,11 +127,40 @@ class DataProcessingGUI:
             rows = self.process_rows(stripe_df_cleaned, other_df, category_codes, categories)
             
             final_df = pd.DataFrame(rows).sort_values('Session Date')
-            final_df.to_excel(FINAL_REPORT_NAME, index=False)
-            messagebox.showinfo("Success", f"Processing complete. Final report saved as '{FINAL_REPORT_NAME}'")
+
+            self.update_status("Exporting data to Excel...")
+            self.save_excel_file(final_df, codes_df)
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
+    def save_excel_file(self, final_df, codes_df, attempt=0):
+        try:
+            if attempt > 0:
+                file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+                if not file_path:  # User canceled the file dialog
+                    return
+            else:
+                file_path = FINAL_REPORT_NAME
+
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                final_df.to_excel(writer, sheet_name='Processed Data', index=False)
+                codes_df.to_excel(writer, sheet_name='Category Codes', index=False)
+
+            messagebox.showinfo("Success", f"Processing complete. Final report saved as '{os.path.basename(file_path)}'")
+        except PermissionError:
+            if attempt == 0:
+                response = messagebox.askretrycancel("Permission Denied", 
+                    "Unable to save the file. It might be open in another program. "
+                    "Close the file and click 'Retry', or click 'Cancel' to choose a different location.")
+                if response:  # Retry
+                    self.save_excel_file(final_df, codes_df, attempt)
+                else:  # Cancel and choose new location
+                    self.save_excel_file(final_df, codes_df, attempt + 1)
+            else:
+                messagebox.showerror("Error", "Unable to save the file. Please ensure you have write permissions for the selected location.")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while saving the file: {str(e)}")
 
     @staticmethod
     def get_category_or_code(program_name, dictionary):
