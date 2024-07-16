@@ -76,10 +76,30 @@ class DataProcessingGUI:
     def create_process_button(self):
         tk.Button(self.root, text="Process Data", command=self.process_data).grid(row=7, column=1, pady=20)  # Changed row from 6 to 7
 
-    def browse_file(self, entry_widget):
-        filename = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")])
-        entry_widget.delete(0, tk.END)
-        entry_widget.insert(0, filename)
+    def create_file_inputs(self):
+        for row, (label_text, attr_name, file_type) in enumerate([
+            ("Stripe CSV:", "stripe_entry", "csv"),
+            ("Other CSV:", "other_entry", "csv"),
+            ("Codes XLSX:", "codes_entry", "xlsx")
+        ]):
+            tk.Label(self.root, text=label_text).grid(row=row, column=0, sticky="e", padx=5, pady=5)
+            entry = tk.Entry(self.root, width=50)
+            entry.grid(row=row, column=1, padx=5, pady=5)
+            setattr(self, attr_name, entry)
+            tk.Button(self.root, text="Browse", command=lambda e=entry, ft=file_type: self.browse_file(e, ft)).grid(row=row, column=2, padx=5, pady=5)
+
+    def browse_file(self, entry_widget, file_type):
+        if file_type == "csv":
+            filetypes = [("CSV files", "*.csv")]
+        elif file_type == "xlsx":
+            filetypes = [("Excel files", "*.xlsx")]
+        else:
+            filetypes = [("All files", "*.*")]
+
+        filename = filedialog.askopenfilename(filetypes=filetypes)
+        if filename:
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, filename)
 
     def safe_read_file(self, file_path, file_type, sheet_name=None):
         try:
