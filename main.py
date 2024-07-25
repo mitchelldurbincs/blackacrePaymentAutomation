@@ -38,7 +38,7 @@ class DataProcessingGUI:
     def create_file_inputs(self):
         for row, (label_text, attr_name) in enumerate([
             ("Stripe CSV:", "stripe_entry"),
-            ("Other CSV:", "other_entry"),
+            ("Cogran CSV:", "other_entry"),
             ("Codes XLSX:", "codes_entry")
         ]):
             tk.Label(self.root, text=label_text).grid(row=row, column=0, sticky="e", padx=5, pady=5)
@@ -79,7 +79,7 @@ class DataProcessingGUI:
     def create_file_inputs(self):
         for row, (label_text, attr_name, file_type) in enumerate([
             ("Stripe CSV:", "stripe_entry", "csv"),
-            ("Other CSV:", "other_entry", "csv"),
+            ("Cogran CSV:", "other_entry", "csv"),
             ("Codes XLSX:", "codes_entry", "xlsx")
         ]):
             tk.Label(self.root, text=label_text).grid(row=row, column=0, sticky="e", padx=5, pady=5)
@@ -146,7 +146,7 @@ class DataProcessingGUI:
 
             rows = self.process_rows(stripe_df_cleaned, other_df, category_codes, categories)
             
-            final_df = pd.DataFrame(rows).sort_values('Session Date')
+            final_df = pd.DataFrame(rows).sort_values('Transaction Date')
 
             self.update_status("Exporting data to Excel...")
             self.save_excel_file(final_df, codes_df)
@@ -208,7 +208,8 @@ class DataProcessingGUI:
             stripe_amount = row['Amount']
             stripe_fee = row['Fee']
             amount_after_fees = stripe_amount - stripe_fee
-            
+
+            stripe_date = row['Created date (UTC)'].strftime('%m/%d/%Y')
             other_records = other_df[other_df['Payment Ref'] == stripe_id].reset_index(drop=True)
             
             program_name, session_date = self.get_program_info(other_records)
@@ -217,6 +218,7 @@ class DataProcessingGUI:
             category = self.get_category_or_code(program_name, categories)
 
             rows.append({
+                'Transaction Date': stripe_date,
                 'Session Date': session_date,
                 'Category': category,
                 'Program': program_name,
